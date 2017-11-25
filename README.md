@@ -1,4 +1,4 @@
-# preto-card-puppeteer
+# presto-card-puppeteer
 
 Get your presto card balance using [Puppeteer](https://github.com/GoogleChrome/puppeteer).
 
@@ -7,6 +7,6 @@ Get your presto card balance using [Puppeteer](https://github.com/GoogleChrome/p
 #### Get balance
 
 ````
-const prestoCard = require('preto-card-puppeteer');
+const prestoCard = require('presto-card-puppeteer');
 prestoCard.getBalance('username', 'password').then(balance => console.log(balance));
 ```
