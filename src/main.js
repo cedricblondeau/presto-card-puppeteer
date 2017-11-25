@@ -24,7 +24,10 @@ async function getBalance(username, password) {
 
   await page.waitForSelector(dashboardBalanceSelector);
 
-  const balance = await page.evaluate(body => body.getElementsByClassName('dashboard__quantity')[0].innerText);
+  const balance = await page.evaluate(() => {
+    const balanceParagraph = document.getElementsByClassName('dashboard__quantity')[0]; // eslint-disable-line
+    return balanceParagraph.innerText;
+  });
   browser.close();
 
   return balance;
