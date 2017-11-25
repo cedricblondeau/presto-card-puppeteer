@@ -12,6 +12,18 @@ async function getBalance(username, password) {
 
   const page = await browser.newPage();
   page.setUserAgent(userAgent);
+  await page.setRequestInterception(true);
+  page.on('request', (request) => {
+    if (
+      request.resourceType === 'stylesheet' ||
+      request.resourceType === 'font' ||
+      request.resourceType === 'image'
+    ) {
+      request.abort();
+    } else {
+      request.continue();
+    }
+  });
   await page.goto(loginPageUrl, { waitUntil: 'load' });
 
   await page.waitFor(loginPageUsernameInputSelector);
