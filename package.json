@@ -1,4 +1,5 @@
 {
+  "name": "preto-card-puppeteer",
   "dependencies": {
     "puppeteer": "^0.13.0"
   },
