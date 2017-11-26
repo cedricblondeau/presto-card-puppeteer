@@ -1,17 +1,10 @@
 const puppeteer = require('puppeteer');
 
-const loginPageUrl = 'https://www.prestocard.ca/en-US/Pages/TransactionalPages/AccountLogin.aspx';
-const loginPageUsernameInputSelector = 'input[id=SignIn_Username]';
-const loginPagePasswordInputSelector = 'input[id=SignIn_Password]';
-const loginPageSubmitSelector = 'button[id=btnsubmit]';
-const dashboardBalanceSelector = 'p.dashboard__quantity';
-const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36';
+const constants = require('./constants');
 
-async function getBalance(username, password) {
-  const browser = await puppeteer.launch();
-
+async function getPuppeteerPage(browser) {
   const page = await browser.newPage();
-  page.setUserAgent(userAgent);
+  page.setUserAgent(constants.userAgent);
   await page.setRequestInterception(true);
   page.on('request', (request) => {
     if (
@@ -24,25 +17,44 @@ async function getBalance(username, password) {
       request.continue();
     }
   });
-  await page.goto(loginPageUrl, { waitUntil: 'load' });
 
-  await page.waitFor(loginPageUsernameInputSelector);
-  await page.type(loginPageUsernameInputSelector, username);
+  return page;
+}
 
-  await page.waitFor(loginPagePasswordInputSelector);
-  await page.type(loginPagePasswordInputSelector, password);
+async function loginAndFindBalance(page, username, password) {
+  await page.goto(
+    constants.loginPageUrl,
+    { waitUntil: 'load', timeout: constants.defaultPageLoadTimeoutInMilliseconds },
+  );
 
-  await page.click(loginPageSubmitSelector);
+  await page.waitFor(constants.loginPageUsernameInputSelector);
+  await page.type(constants.loginPageUsernameInputSelector, username);
 
-  await page.waitForSelector(dashboardBalanceSelector);
+  await page.waitFor(constants.loginPagePasswordInputSelector);
+  await page.type(constants.loginPagePasswordInputSelector, password);
 
-  const balance = await page.evaluate(() => {
-    const balanceParagraph = document.getElementsByClassName('dashboard__quantity')[0]; // eslint-disable-line
-    return balanceParagraph.innerText;
+  await page.click(constants.loginPageSubmitSelector);
+
+  const opts = { timeout: constants.defaultPageLoadTimeoutInMilliseconds };
+  return page.waitForSelector(constants.dashboardBalanceSelector, opts).then(() => {
+    const balance = page.evaluate(() => {
+      const htmlCollection = document.getElementsByClassName('dashboard__quantity'); // eslint-disable-line
+      const balanceParagraph = htmlCollection.item(0);
+      return balanceParagraph.innerText;
+    });
+    return balance;
   });
-  browser.close();
+}
 
-  return balance;
+async function getBalance(username, password) {
+  const browser = await puppeteer.launch();
+  try {
+    const page = await getPuppeteerPage(browser);
+    const balance = await loginAndFindBalance(page, username, password);
+    return balance;
+  } finally {
+    await browser.close();
+  }
 }
 
 module.exports = {
